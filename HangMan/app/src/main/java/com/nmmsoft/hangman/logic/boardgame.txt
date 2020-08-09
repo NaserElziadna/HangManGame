@@ -1,0 +1,303 @@
+package com.nmmsoft.hangman;
+
+import androidx.annotation.ColorRes;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.CalendarContract;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.nmmsoft.hangman.logic.DatabaseHelper;
+import com.nmmsoft.hangman.logic.Game;
+import com.nmmsoft.hangman.logic.Player;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+public class BoardGame extends AppCompatActivity {
+    DatabaseHelper db;
+//    public Game game;
+    // Java Keywords
+    public static final String[] WORDS = {
+            "NASER", "AA"
+//            , "BOOLEAN", "BREAK", "BYTE",
+//            "CASE", "CATCH", "CHAR", "CLASS", "CONST",
+//            "CONTINUE", "DEFAULT", "DOUBLE", "DO", "ELSE",
+//            "ENUM", "EXTENDS", "FALSE", "FINAL", "FINALLY",
+//            "FLOAT", "FOR", "GOTO", "IF", "IMPLEMENTS",
+//            "IMPORT", "INSTANCEOF", "INT", "INTERFACE",
+//            "LONG", "NATIVE", "NEW", "NULL", "PACKAGE",
+//            "PRIVATE", "PROTECTED", "PUBLIC", "RETURN",
+//            "SHORT", "STATIC", "STRICTFP", "SUPER", "SWITCH",
+//            "SYNCHRONIZED", "THIS", "THROW", "THROWS",
+//            "TRANSIENT", "TRUE", "TRY", "VOID", "VOLATILE", "WHILE"
+    };
+    public static final Random RANDOM = new Random();
+    public static final int MAX_ERRORS = 6;
+    private String wordToFind;
+    private char[] wordFound;
+    private int nbErrors;
+    private ArrayList< String > letters = new ArrayList < > ();
+    private int currentLive=7;
+    private int pScore;
+    private String pName;
+    private Player current_Player=new Player();
+
+    private ImageView img;
+    private TextView wordTv;
+    private TextView livesTv;
+    private TextView nameTv;
+    private TextView scoreTv;
+    private TextView wordToFindTv;
+
+    Game hangman;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_board_game);
+
+        db=new DatabaseHelper(BoardGame.this);
+
+
+        img = findViewById(R.id.img_hangman);
+        wordTv = findViewById(R.id.wordTv);
+        wordToFindTv = findViewById(R.id.wordToFindTv);
+        livesTv = findViewById(R.id.lives);
+        nameTv =findViewById(R.id.player_Name_BoardGame);
+        scoreTv =findViewById(R.id.player_Score_BoardGame);
+//        current_Player=ChoosePlayerActivity.current_Player;
+        Intent intent = getIntent();
+         nameTv.setText(intent.getStringExtra("Player"));
+         scoreTv.setText(intent.getStringExtra("Score"));
+//         nameTv.setText(current_Player.getName());
+          pName=String.valueOf(nameTv.getText());
+        Toast.makeText(this, scoreTv.getText(), Toast.LENGTH_SHORT).show();
+        pScore=Integer.parseInt(scoreTv.getText().toString());
+//        current_Player.setName(pName);
+
+
+            newGame();
+
+    }
+//    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+//    public void touchLetter(View v) {
+//        if (hangman.getNbErrors() < hangman.getMaxErrors()
+//                && !getString(R.string.you_win).equals(wordToFindTv.getText())) {
+//            String letter = ((Button) v).getText().toString();
+//            if(hangman.enter(letter)){
+//                v.setBackground(getResources().getDrawable(R.mipmap.correct_letter_bg));
+//                v.setEnabled(false);
+//            }
+//            else{
+//                v.setBackground(getResources().getDrawable(R.mipmap.wrong_letter_bg));
+//                v.setEnabled(false);
+//                int a=hangman.getCurrentLive();
+//                a--;
+//                livesTv.setText(String.valueOf(a));
+//            }
+//            wordTv.setText(hangman.wordFoundContent());
+//            hangman.updateImg(hangman.getNbErrors());
+//
+//
+//            // check if word is found
+//            if (hangman.wordFounded()) {
+//                Toast.makeText(this, R.string.you_win, Toast.LENGTH_SHORT).
+//                        show();
+//                wordToFindTv.setText(R.string.you_win);
+//            }
+//            else {
+//                if (hangman.getNbErrors() >= hangman.getMaxErrors()) {
+//                    Toast.makeText(this, R.string.you_lose, Toast.LENGTH_SHORT).show();
+//                    wordToFindTv.setText(getString(R.string.word_to_find).
+//                            replace("#word#", hangman.getWordToFind()));
+//                }
+//            }
+//        } else {
+//            Toast.makeText(this, R.string.game_is_ended, Toast.LENGTH_SHORT).show();
+//        }
+//    }
+
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
+            Toast.makeText(this, "Back Button Pressed", Toast.LENGTH_SHORT).show();
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    //    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        getMenuInflater().inflate(R.menu.main, menu);
+//        return true;
+//    }
+//
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (item.getItemId() == R.id.new_game) {
+//            newGame();
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
+
+    // Method returning randomly next word to find
+    private String nextWordToFind() {
+        return WORDS[RANDOM.nextInt(WORDS.length)];
+    }
+
+    // Method for starting a new game
+    public void newGame() {
+        LinearLayout layout = findViewById(R.id.linearLayout_keyboard);
+        for (int a=0;a<layout.getChildCount();a++) {
+            LinearLayout child1 = (LinearLayout) layout.getChildAt(a);
+
+            int count = child1.getChildCount();
+            View v = null;
+
+            for (int i = 0; i < count; i++) {
+                v = (Button) child1.getChildAt(i);
+                v.setBackgroundColor(Color.GRAY);
+                //do something with your child element
+            }
+        }
+
+        nbErrors = -1;
+        letters.clear();
+        wordToFind = nextWordToFind();
+        livesTv.setText(String.valueOf(currentLive));
+
+        // word found initialization
+        wordFound = new char[wordToFind.length()];
+
+        for (int i = 0; i < wordFound.length; i++) {
+            wordFound[i] = '_';
+        }
+
+        updateImg(nbErrors);
+        wordTv.setText(wordFoundContent());
+        wordToFindTv.setText("");
+    }
+
+    // Method returning trus if word is found by user
+    public boolean wordFounded() {
+        return wordToFind.contentEquals(new String(wordFound));
+    }
+
+    // Method updating the word found after user entered a character
+    private boolean enter(String c) {
+        // we update only if c has not already been entered
+        if (!letters.contains(c)) {
+            // we check if word to find contains c
+            if (wordToFind.contains(c)) {
+                // if so, we replace _ by the character c
+                int index = wordToFind.indexOf(c);
+
+                while (index >= 0) {
+                    wordFound[index] = c.charAt(0);
+                    index = wordToFind.indexOf(c, index + 1);
+                }
+               scoringAndUpdate(true);
+                return true;
+            } else {
+                // c not in the word => error
+                nbErrors++;
+                Toast.makeText(this, R.string.try_an_other, Toast.LENGTH_SHORT).show();
+                scoringAndUpdate(false);
+
+            }
+
+            // c is now a letter entered
+            letters.add(c);
+        } else {
+            Toast.makeText(this, R.string.letter_already_entered, Toast.LENGTH_SHORT).show();
+        }
+        return false;
+    }
+
+    private void scoringAndUpdate(boolean a){
+        if (a){
+            pScore+=15;
+            scoreTv.setText(String.valueOf(pScore));
+        }
+        else {
+                pScore-=3;
+            scoreTv.setText(String.valueOf(pScore));
+        }
+        current_Player.setScore(pScore);
+        Toast.makeText(this,pName.toString()+" "+pScore, Toast.LENGTH_SHORT).show();
+
+        db.updatePlayerScoreData(pName,pScore);
+    }
+
+    // Method returning the state of the word found by the user until by now
+    private String wordFoundContent() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < wordFound.length; i++) {
+            builder.append(wordFound[i]);
+
+            if (i < wordFound.length - 1) {
+                builder.append(" ");
+            }
+        }
+
+        return builder.toString();
+    }
+
+
+    private void updateImg(int play) {
+        int resImg = getResources().getIdentifier("hang" + play, "drawable", getPackageName());
+        img.setImageResource(resImg);
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+    public void touchLetter(View v) {
+        if (nbErrors < MAX_ERRORS
+                && !getString(R.string.you_win).equals(wordToFindTv.getText())) {
+            String letter = ((Button) v).getText().toString();
+            if(enter(letter)){
+                v.setBackground(getResources().getDrawable(R.mipmap.correct_letter_bg));
+                v.setEnabled(false);
+            }
+            else{
+                v.setBackground(getResources().getDrawable(R.mipmap.wrong_letter_bg));
+                v.setEnabled(false);
+                currentLive--;
+                livesTv.setText(String.valueOf(currentLive));
+            }
+            wordTv.setText(wordFoundContent());
+            updateImg(nbErrors);
+
+
+            // check if word is found
+            if (wordFounded()) {
+                Toast.makeText(this, R.string.you_win, Toast.LENGTH_SHORT).
+                        show();
+                wordToFindTv.setText(R.string.you_win);
+            }
+            else if (wordFounded()&&currentLive>0){newGame();}
+                else {
+                if (nbErrors >= MAX_ERRORS) {
+                    Toast.makeText(this, R.string.you_lose, Toast.LENGTH_SHORT).show();
+                    wordToFindTv.setText(getString(R.string.word_to_find).
+                            replace("#word#", wordToFind));
+                }
+            }
+        } else {
+            Toast.makeText(this, R.string.game_is_ended, Toast.LENGTH_SHORT).show();
+        }
+    }
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="category">
+        <item>java</item>
+        <item>animals</item>
+        <item>verbs</item>
+        <item>names</item>
+    </string-array>
+    <string-array name="javaKeyWord">
+        <item>INT</item>
+        <item>FLOAT</item>
+        <item>STRING</item>
+        <item>CHAR</item>
+    </string-array>
+    <string-array name="animalsKeyWord">
+        <item>CAT</item>
+        <item>FOX</item>
+        <item>HORSE</item>
+        <item>DONKEY</item>
+    </string-array>
+    <string-array name="verbsKeyWord">
+        <item>GO</item>
+        <item>MOVE</item>
+        <item>WALK</item>
+        <item>DRINK</item>
+    </string-array>
+    <string-array name="namesKeyWord">
+        <item>NASER</item>
+        <item>HASSAN</item>
+        <item>ALI</item>
+        <item>MONTASER</item>
+        <item>MAMON</item>
+    </string-array>
+</resources>
